@@ -22,21 +22,21 @@ knitr::opts_chunk$set(fig.retina=3,
 
 # 1. Introduction
 
-Mini-Challenge 2 (MC2) is one of the 3 challenges from the VAST 2021 Challenge. An interesting note is that the VAST 2021 Challenge is actually adapted from the VAST 2014 Challenge. 
+[Mini-Challenge 2 (MC2)](https://vast-challenge.github.io/2021/MC2.html) is one of the 3 challenges from the VAST 2021 Challenge. An interesting note is that the VAST 2021 Challenge is actually adapted from the VAST 2014 Challenge. 
 
-For our chosen challenge, MC2, the main objective is to use the given data to discover unusual patterns in employees’ daily lives from their credit/debit/loyalty card records and the GPS tracking records of their cars.  
+For our chosen challenge, MC2, the main objective is to use the given data to discover unusual patterns in employees’ daily lives from their credit/loyalty card records and the GPS tracking records of their cars.  
 
 # 2. Literature Review
 
-We conduct a review of how the analysis was conducted previously for the VAST 2014 challenge. In particular, we looked at analyses conducted by a team from Peking University (PKU) [(Chen, 2014)](http://simingchen.me/docs/vastchallenge14-mc2.pdf) and the team from the University of Konstanz (UoK) [(Fischer, 2014)](http://vis.cs.ucdavis.edu/vis2014papers/VIS_Conference/vast/challenge/Fischer_02.pdf). The approach that both teams took involved the cross analysis and merging of all the data files.
+We conduct a review of how the analysis was conducted previously for the VAST 2014 challenge. In particular, we looked at analyses conducted by a team from Peking University (PKU) [(Chen, 2014)](http://simingchen.me/docs/vastchallenge14-mc2.pdf) and the team from the University of Konstanz (UoK) [(Fischer, 2014)](http://vis.cs.ucdavis.edu/vis2014papers/VIS_Conference/vast/challenge/Fischer_02.pdf). The approach that both teams took involved the cross analysis and merging of all data files.
 
 The team from PKU proposed a multi-ﬁlter visual analytics web-based system for movement data investigation called Movement Finder. Their system integrates movement information from different datasets. With various visualizations and multiple ﬁlters, it is able to summarize the general movement patterns of a group of people, and help analysts detect abnormal events. 
 
 ![](assignment-mc2_files/IMG/MVTFIND.PNG)
 
-The team assumed some definitions when building this application - they deﬁned all stops above 1 minute in the GPS data as events and they defined some Point-of-Interests(POIs) and transaction information by categorising the different locations present from the tourist map. If a car's GPS data indicated that the car's location was within the boundary of a POI, it would be assumed that car was at the particular POI.  
+The team assumed some definitions when building this application - they deﬁned all stops above 1 minute in the GPS data as events and they defined some Point-of-Interests(POIs) by categorising the different locations present from the tourist map. If a car's GPS data indicated that the car's location was within the boundary of a POI, it would be assumed that car was at the particular POI.  
 
-On the other hand, the team from UoK presented a Geographic Information System (GIS) aimed to interactively analyze the complex geo-temporal data of MC2. A time series indicates the amount of movement over time that guides the user to interesting time frames. Further, suspects and location types can be interactively ﬁltered to discover unexpected behaviour patterns.  
+On the other hand, the team from UoK presented a Geographic Information System (GIS) aimed to interactively analyze the complex geo-temporal data of MC2. A time series indicates the amount of movement over time that guides the user to interesting time frames. Through the GIS developed, suspects and location types can be interactively ﬁltered to discover unexpected behaviour patterns.  
 
 ![](assignment-mc2_files/IMG/uok.PNG)
 
@@ -46,7 +46,7 @@ Both teams offered highly visual and interactive techniques to identify abnormal
 
 ### 3.1 Loading the Datasets  
 
-Import relevant packages into R. The R packages will be used to read the data and plot the visualization.
+Load the relevant packages into R. These R packages will be used to read the data and plot the visualization.
 
 ```{r, layout="l-body-outset", preview=TRUE}
 packages = c('tmap','clock','leaflet','mapview','DT', 'ggiraph', 'plotly', 'shiny', 'tidyverse', 'dplyr','tibbletime', 'lubridate', 'rgdal', 'readr', 'sf', 'raster','igraph','tidygraph', 'ggraph','visNetwork','mapview')
@@ -59,11 +59,7 @@ for(p in packages){
 }
 ```
 
-
-### 3.2 Data Wrangling
-
-Firstly, we import all the necessary datasets.
-
+Then, we import all the necessary datasets.
 
 ```{r, layout="l-body-outset", preview=TRUE}
 cc_data <- read_csv("cc_data.csv")
@@ -76,9 +72,11 @@ gps <- read_csv("gps.csv")
 glimpse(gps)
 ```
 
-We note that the timestamp fields across the datasets is not in date-time format and also, the ID field should be in factor data type.
+### 3.2 Data Wrangling
 
-Before we proceed, we want to transform the values in the timestamp field into correct date-time format. An additional step for the credit card (cc) and the gps data is deriving a day-of-month field from timestamp and deriving a hour-of-day field from timestamp. 
+We note that the timestamp fields across the datasets is not in date-time format and also, the Car ID field should be in factor data type.
+
+Hence, before we proceed, we want to transform the values in the timestamp field into correct date-time format. An additional step for the credit card (cc) and the gps data is deriving a day-of-month field from the timestamp and deriving a hour-of-day field from the timestamp. 
 
 Specifically, for the cc dataset, we also want to transform values in last4ccnum field to character data type. We will create a separate format for the cc data for merging with the loyalty data later on.
 
@@ -110,8 +108,6 @@ glimpse(gps)
 
 In the code below, the as_factor() of forcats package is used to convert values in the Car ID fields from numerical to factor data type.
 
-![](assignment-mc2_files/IMG/carid.PNG)
-
 ```{r, layout="l-body-outset", preview=TRUE}
 gps$id<- as_factor(gps$id)
 glimpse(gps)
@@ -120,9 +116,7 @@ car_assignments$CarID <- as_factor(car_assignments$CarID)
 glimpse(car_assignments)
 ```
 
-We will also rename the timestamp field of the loyalty data to 'Date' and the id field of the gps data to 'CarID'.
-
-![](assignment-mc2_files/IMG/colren.PNG)
+We will also rename the timestamp field of the loyalty data to 'Date' and the ID field of the gps data to 'CarID'.
 
 ```{r, layout="l-body-outset", preview=TRUE}
 names(loyalty_data)[names(loyalty_data) == "timestamp"] <- "Date"
@@ -141,18 +135,14 @@ df_car_assignments = data.frame(car_assignments)
 df_gps = data.frame(gps)
 ```
 
-After this, we want to merge the CC and loyalty datasets together to get a holistic view of employee spending. We do this by matching the 2 datasets by "Date", "location" and "price".
-
-![](assignment-mc2_files/IMG/merge.PNG)
+After this, we want to merge the CC and loyalty datasets together to get a holistic view of employee spending. We do this by matching the 2 relevant datasets by "Date", "location" and "price".
 
 ```{r, layout="l-body-outset", preview=TRUE}
 cc_loyalty <- merge(df_cc_data1,df_loyalty_data,by=c("Date","location", "price"))
 glimpse(cc_loyalty)
 ```
 
-Next, we merge the car assignment and gps data set together.
-
-![](assignment-mc2_files/IMG/mercar.PNG)
+Next, we merge the car assignment and gps dataset together.
 
 ```{r, layout="l-body-outset", preview=TRUE}
 gps_car_assignments <- merge(df_gps,df_car_assignments,by=c("CarID"))
@@ -179,13 +169,13 @@ ggplot(top_5_locations, aes(x=reorder(location, -n),y=n))+
   ylim(0, max(top_5_locations$n) * 1.1)
 ```
 
-The most popular locations are the ones which serve food and drinks. Amongst these locations, there is a clear divide between those locations which are popular for lunch/dinner and those which are popular for breakfast. For example, for the top 3 locations - Katerina’s Cafe, Hippokampos and Guy's Gyros, the CC transactions occurred mostly between 1pm to 3pm and between 7pm to 10pm. As for the 4th and 5th most popular location – Brew’ve Been Served and Hallowed Grounds, the credit card transactions occurred most between 7am to 9am. Another observation is that most of the transactions occurred before working hours,during lunch breaks and after working hours.
+The most popular locations are the ones which serve food and drinks. Amongst these locations, there is a clear divide between those locations which are popular for lunch/dinner and those which are popular for breakfast. For example, for the top 3 locations - Katerina’s Cafe, Hippokampos and Guy's Gyros, the CC transactions occurred mostly between 1pm to 3pm and between 7pm to 10pm. As for the 4th and 5th most popular location – Brew’ve Been Served and Hallowed Grounds, the CC transactions occurred mostly between 7am to 9am. Another observation is that most of the transactions occurred before working hours,during lunch breaks and after working hours.
 
 ```{r, layout="l-body-outset", preview=TRUE}
 Katcafe <- df_cc_data %>% filter(location == "Katerina Cafe") %>% count(Hour)
 ggplot(Katcafe, aes(x=reorder(Hour, -n),y=n))+
   geom_col()+
-  theme(axis.text.x=element_text(angle=45, hjust=1))+
+  theme(axis.text.x=element_text(angle=360, hjust=1))+
   geom_text(aes(label = n), vjust = -0.2)+
   ggtitle("No. of transactions per hour at Katerinas Cafe")+
   xlab("Hour of Day") + ylab("No. of CC transactions")
@@ -195,13 +185,13 @@ ggplot(Katcafe, aes(x=reorder(Hour, -n),y=n))+
 HallowedG <- df_cc_data %>% filter(location == "Hallowed Grounds") %>% count(Hour)
 ggplot(HallowedG, aes(x=reorder(Hour, -n),y=n))+
   geom_col()+
-  theme(axis.text.x=element_text(angle=45, hjust=1))+
+  theme(axis.text.x=element_text(angle=360, hjust=1))+
   geom_text(aes(label = n), vjust = -0.2)+
   ggtitle("No. of transactions per hour at Hallowed Grounds")+
   xlab("Hour of Day") + ylab("No. of CC transactions")
 ```
 
-Looking at the loyalty data shows us that the locations with the highest number of cc transactions are also the locations with the highest number of loyalty transactions recorded (the rankings are only slight different).
+Looking at the loyalty data shows us that the locations with the highest number of cc transactions mostly align with the locations with the highest number of loyalty transactions recorded.
 
 ```{r, layout="l-body-outset", preview=TRUE}
 location_count1 <- df_loyalty_data %>% count(location)
@@ -217,9 +207,9 @@ ggplot(top_5_locations1, aes(x=reorder(location, -n),y=n))+
 
 There are some anomalies observed.  
 
-*	The CC data and loyalty data were of varying resolution. While CC data was available to the minute, the loyalty card information was available only at day level. We dealt with anomaly with our data wrangling in an earlier section.
+*	The CC data and loyalty data were of varying resolution. While CC data was available to the minute, the loyalty card information was available only at day level. We dealt with this anomaly with our data wrangling in an earlier section - deriving the date field from the CC data.
 
-* Not all credit card transactions had corresponding loyalty transactions. This is obvious from the different number of rows in the CC dataset and the loyalty dataset.
+* Not all CC transactions had corresponding loyalty transactions. This is obvious from the different number of rows in the CC dataset and the loyalty dataset.
 
 ```{r, layout="l-body-outset", preview=TRUE}
 nrow(df_cc_data)
@@ -227,7 +217,6 @@ nrow(df_loyalty_data)
 ```
 
 * All transactions at Bean There Done That, Brewed Awakenings, Jack's Magical Beans, and Coffee Shack occurred at 12pm. This s extremely unlikely.
-
 
 ```{r, layout="l-body-outset", preview=TRUE}
 BrewedAw <- df_cc_data %>% filter(location == "Brewed Awakenings") %>% count(Hour)
@@ -262,14 +251,13 @@ girafe(
 )
 ```
 
-
-* Some corresponding Loyalty card transactions are lower than the price charged to the credit card. E.g. at Katerina’s Cafe, we see that by matching the LC number, CC number and price, we infer that for the second transaction charged to card ending 8411, only $38.65 was charged to the LC card while $78.65 was charged to the CC, a discrepancy of $40. This is just one of the examples where the amount charged to the LC card was less than the amount charged to the CC card.  
+* Some corresponding loyalty card transactions are lower than the price charged to the credit card. E.g. at Katerina’s Cafe, we see that by matching the loyalty card number, CC number and price, we infer that for the second transaction charged to card ending 8411, only $38.65 was charged to the loyalty card while $78.65 was charged to the CC, a discrepancy of $40. This is just one of the examples where the amount charged to the LC card was less than the amount charged to the CC card.  
 
 ![](assignment-mc2_files/IMG/l6110.PNG)
 
 ### 2. Add the vehicle data to your analysis of the credit and loyalty card data. How does your assessment of the anomalies in question 1 change based on this new data? What discrepancies between vehicle, credit, and loyalty card data do you find? Please limit your answer to 8 images and 500 words.  
 
-We first import in the raster file and plot the raster layer. We also import the vector GIS data file and converting the gps data into a simple feature data frame. Last but not least, we create movement paths from the gps points.
+We first import in the raster file and plot the raster layer. We also import the vector GIS data file and convert the gps data into a simple feature data frame. Last but not least, we create movement paths from the gps points.
 
 ```{r, layout="l-body-outset", preview=TRUE}
 bgmap <- raster("MC2-tourist_modified.tif")
@@ -303,7 +291,7 @@ gps_path2 <- cbind(gps_path, p)
 df_gps_path2 = data.frame(gps_path2)
 ```
 
-There are some limitations to using the GPS data - GPS data are not collected while the car (and GPS) is turned off, thus with no movement in between. 
+There are some limitations to using the GPS data - GPS data are not collected while the car (and GPS) is turned off, thus no movement is recorded. 
 
 Also, We note that the GPS of Car 28, owned by Isande Borrasca is probably malfunctioning as the GPS data showed disorganized placements. 
 
@@ -321,7 +309,9 @@ tm_shape(bgmap) +
   tm_lines()
 ```
 
-Regarding some of the anomalies identified earlier on, e.g. the anomalous transaction with a value of $10,000 taking place at Frydos Autosupply n' More on 13th January 2021 at 7.20pm, adding on the GPS data allowed us to identify that the transaction was made by the owner of CarID 34, who is Edvard Vann who is in the security department. We will need to verify later on that the cc used to make this large transaction was indeed owned by Edvard Vann.
+Regarding some of the anomalies identified earlier on, e.g. the anomalous transaction with a value of $10,000 taking place at Frydos Autosupply n' More on 13th January 2021 at 7.20pm, adding on the GPS data allowed us to identify that the transaction was made by the owner of CarID 34, who is Edvard Vann, a member of the security department. We will need to verify later on that the CC used to make this large transaction is indeed owned by Edvard Vann.
+
+![](assignment-mc2_files/IMG/34.png)
 
 For the anomaly where all transactions at Bean There Done That, Brewed Awakenings, Jack's Magical Beans, and Coffee Shack were time-stamped exactly at noon, we verified after checking with the gps data that the main traffic to these cafes was in the morning.
 
@@ -329,58 +319,18 @@ Additionally, we identified another anomaly where a view of the Kronos Mart data
 
 ### 3. Can you infer the owners of each credit card and loyalty card? What is your evidence? Where are there uncertainties in your method? Where are there uncertainties in the data? Please limit your answer to 8 images and 500 words. 
 
-To identify the owners of each cc and loyalty card, we first transform the cc dataset into a network graph. We do this to see which credit card was often used at which location.
+We can infer the owners by considering the linkages between the datasets as below.
 
-```{r, layout="l-body-outset", preview=TRUE}
-cc_data <- read_csv("cc_data.csv")
-cc_data$timestamp <-  date_time_parse(cc_data$timestamp,
-                                      zone = "",
-                                      format = "%m/%d/%Y %H:%M")
-cc_data$last4ccnum <- as.character(cc_data$last4ccnum)
-cc_data$Day  = get_day(cc_data$timestamp)
-cc_data$Hour = get_hour(cc_data$timestamp)
+![](assignment-mc2_files/IMG/link.png)
 
-sources <- cc_data %>%
-  distinct(last4ccnum) %>%
-  rename(label = last4ccnum)
-destinations <- cc_data %>%
-  distinct(location) %>%
-  rename(label = location)
-cc_nodes <- full_join(sources, 
-                      destinations, 
-                      by = "label")
-cc_nodes <- cc_nodes %>% 
-  rowid_to_column("id")
-edges <- cc_data %>%  
-  group_by(last4ccnum, location, Day, Hour) %>%
-  summarise(weight = n()) %>% 
-  ungroup()
+Firstly, we match the owners of the credit cards with the corresponding LC cards by matching the timestamps, location and price. Then by matching the timestamps and longitude/latitude data in the GPS dataset with the timestamps and location on the CC data, we infer which were the Car IDs used to bring the individual to the location. Finally we matched the Car ID information to the employees.
 
-cc_edges <- edges %>% 
-  left_join(cc_nodes, 
-            by = c("last4ccnum" = "label")) %>% 
-  rename(from = id)
-cc_edges <- cc_edges %>% 
-  left_join(cc_nodes, 
-            by = c("location" = "label")) %>% 
-  rename(to = id)
-cc_edges <- select(cc_edges, from, to, 
-                   Day, Hour, weight)
+For example, for CC with last 4 numbers 9551, by checking the timing of the CC transactions against the gps data, we were able to infer that the owner of CarID 1, Nils Calixto, is the owner of the cCC. As an example, Nils entered Hallowed Grounds at 7.22am on January 13th and left at 7.57am after making payment at 7.55am.
 
-cc_graph <- tbl_graph(nodes = cc_nodes, 
-                      edges = cc_edges, 
-                      directed = FALSE)
+![](assignment-mc2_files/IMG/7.22.PNG)
+![](assignment-mc2_files/IMG/7.55.PNG)
 
-ggraph(cc_graph, 
-       layout = "fr") +
-  geom_edge_link(aes(width=weight)) +
-  geom_node_point(aes(colour=id),
-                  size=2) +
-  facet_edges(cc_data$Day)  
-```
-
-By adding on the gps data, we were able to guess the owners of the credit cards by matching up the timestamps, the carID (which are each associated with an employee), the geographical co-ordinates and location.
-
+We repeated the same verification process across multiple transactions for all CC transactions and were able to match the owners of the credit cards as below.
 
 ```{r, layout="l-body-outset", preview=TRUE}
 CC_owner <- read_csv("CC_owner.csv")
@@ -410,7 +360,7 @@ summary(CCownerCar)
 
 3. The individual might have stayed in the store for a long time before and after making the purchase. Hence, matching the timestamps in the GPS dataset and the timestamps in the CC data would not provide us accurate information.  
 
-4. Due to the some of the informal relationships (employees being in a relationship), they might use their partner’s CC to make purchases. E.g. the anomalous transaction with a value of $10,000 taking place at Frydos Autosupply n' More on 13th January 2021 at 7.20pm was made by the owner of CarID 34 who belongs to Edvard Vann. Edvard is in the security department using the credit card with last 4 numbers 9551, which is owned by the owner of car ID 1, Nils Calixto. However, car ID 1 was nowhere near the shop when this transaction was made.
+4. Due to the some of the informal relationships (employees being in a relationship), they might use their partner’s CC to make purchases. E.g. the anomalous transaction with a value of $10,000 taking place at Frydos Autosupply n' More on 13th January 2021 at 7.20pm was made by the owner of CarID 34, Edvard Vann. This transaction was made using the CC with last 4 numbers 9551, which is owned by the owner of car ID 1, Nils Calixto. However, car ID 1 was nowhere near the shop when this transaction was made.
 
 5. Truck drivers do not have their own Car ID and they only work during the weekdays. Hence, it is not possible to match them to any CC transactions during the weekends accurately.
 
@@ -454,14 +404,18 @@ tm_shape(bgmap) +
 
 4. Looking at the spending history of Nils Calixto, one transaction stood out, corresponding to $10,000 at Frydo’s Autosupply n’ More. Nils was not there when the spending occurred. The CarID that corresponded to this transaction was CarID 34 which is owned by Edvard Vann. They could be co-conspirators and Edvard used Nils' credit card.
 
+![](assignment-mc2_files/IMG/34.png)
+
 5.  Ingrid Barranco (4) and Minke Mies (24) are also often together, e.g. they were both at Albert’s Fine Clothing  for a few hours together on January 11. They might have used each other’s credit card due to being in a relationship.
 
+![](assignment-mc2_files/IMG/4.png)
+![](assignment-mc2_files/IMG/24.png)
 
 ### 5. Do you see evidence of suspicious activity? Identify 1- 10 locations where you believe the suspicious activity is occurring, and why Please limit your response to 10 images and 500 words.  
 
 1. Frydos Autosupply n’ More. First, we noticed that there were some regular spending records with no GPS records. These transactions could have belonged to the truck drivers who have no cars and hence, no GPS records.Their frequent spending patterns might be because they have to service the trucks.
 
-    We see that there are numerous occasions where members of the security department make purchases at the autosupply shop together at close intervals. The entire team might be involved in the kidnapping incident.
+    Also, we see that there are numerous occasions where members of the security department make purchases at the autosupply shop together at close intervals. The entire team might be involved in the kidnapping incident.
 
 ![](assignment-mc2_files/IMG/frydo0.PNG)
 ![](assignment-mc2_files/IMG/frydo.PNG)
@@ -470,15 +424,19 @@ tm_shape(bgmap) +
 
 3. Kronos Capitol near Abila Park. We found that Loreto Bodrogi(15), Edvard Vann (34), and Kanon Herrero (25) were all there at about 1pm and stayed on for a few hours on January 18. They might be gathering to discuss about the kidnapping incident.
 
+![](assignment-mc2_files/IMG/1246.png)
+![](assignment-mc2_files/IMG/1313.png)
+![](assignment-mc2_files/IMG/1323.png)
+
 4. By analyzing GPS data, we were able to identify the locations of the four executives’ houses. Analyzing the GPS data revealed that they usually stay at home at night and during the weekends. We found that there were groups of employees who stayed at each of their places at the night of a particular day till the morning, e.g., Isia(16) and Loreto(15) at Ada Campo-Corrente’s on January 7th - January 8th, Minke(24) and Loreto at Orhan Strum’s on January 8th - January 9th, Minke and Loreto at Orhan Strum’s on January 8th - January 9th, Hennie(21) and Isia at Williem Vasco-Pais’ on January 10th-January 11th, and Minke and Hennie at Ingrid Barranco’s on January 13th-January 14th. Based on their staying pattern, we guess that these people were either having discussions in their houses or they were watching/spying on them. 
 
-5. We check Hennie’s house location, which is co-located with the houses of Isia Vann, Loreto Bodrogi, and Inga Ferro. A short absence frequently happened in the evening among the other three, We clicked several spending records, e.g., Isia Vann’s spending on Guy’s Gyros on January 19. At this timing, we see many people had dinner at the same time on January 19, including Isia, Loreto, Minke Mies, and Edvard Vann as well as Sten Sanjorge Jr. These individuals are all members of the security and these gatherings might imply some suspicious meetings/informal relationships among them.
+5. We observed that Hennie, Isia Vann, Loreto Bodrogi, and Inga Ferro often gathered together. They appear to gather together for a short while everytime they meet (No GPS movment). We checked through several spending records, e.g., Isia Vann’s spending on Guy’s Gyros on January 19 at 8pm. At this timing, we see many people had dinner at the same time on January 19, including Isia, Loreto, Minke Mies, and Edvard Vann as well as Sten Sanjorge Jr. These individuals are all members of the security and these gatherings might imply some suspicious meetings/informal relationships among them.
 
-6. Krono's Mart. There were numerous transactions made at 3am in the morning. Of these late night transactions, 3 of them occurred on January 19, the day of the kidnapping. This is highly suspicious. The transactions were conducted by security member Varja Lagos (23), SVP/CIO Ada Campo-Corrente(10) and IT member Nils Calixto (1)
+6. Krono's Mart. There were numerous transactions made at 3am in the morning. Of these late night transactions, 3 of them occurred on January 19, the day of the kidnapping. This is highly suspicious. The transactions were conducted by security member Varja Lagos (23), SVP/CIO Ada Campo-Corrente(10) and IT member Nils Calixto (1). Coincidentally, all three transactions did not have supporting GPS data,i.e. the gps did not reflect that they drove their cars to Krono's Mart when they made these transactions. This is highly suspicious.
 
 ![](assignment-mc2_files/IMG/KM.PNG)
 
-    We see that there are many suspicious activities involving the security department and Nils Calixto who belongs to IT. It is highly probable that these individuals are involved in the kidnapping incident.
+We see that there are many suspicious activities involving the security department and Nils Calixto who belongs to IT. It is highly probable that these individuals are involved in the kidnapping incident.
 
 ### 6. If you solved this mini-challenge in 2014, how did you approach it differently this year?  
 
